@@ -1,113 +1,87 @@
 import React, { useEffect, useRef, useState } from "react";
+import PlayerButtons from "./PlayerButtons";
 
 const PlayerBody = () => {
-    const [lista, setLista] = useState([])
-    const activeSong = useRef()
-    async function listaCancion() {
+  const [lista, setLista] = useState([]);
+  const [cancionActual, setCancionActual] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
 
-        try {
-            const response = await fetch('https://playground.4geeks.com/sound/songs');
-            // console.log(response)
+  useEffect(() => {
+    fetch("https://playground.4geeks.com/sound/songs")
+      .then((res) => res.json())
+      .then((data) => setLista(data.songs))
+      .catch((error) => console.log(error));
+  }, []);
 
-            const data = await response.json()
-            // console.log(data.songs)
-            setLista(data.songs)
-
-        } catch (error) {
-            console.log(error)
-        }
-
-
+  const reproducirCancion = (index) => {
+    if (!lista.length) return;
+    const song = lista[index];
+    const rutaCompleta = "https://playground.4geeks.com" + song.url;
+    if (audioRef.current) {
+      audioRef.current.src = rutaCompleta;
+      audioRef.current.load(); 
+      audioRef.current.play();
+      setCancionActual(index);
+      setIsPlaying(true);
     }
+  };
 
-    function reproducir(urlCancion) {
-        let rutaBase = 'https://playground.4geeks.com'
-        activeSong.current.src = rutaBase.concat(urlCancion)
-        activeSong.current.play()
-
+  const handlePlay = () => {
+    if (!lista.length) return;
+    if (!isPlaying) {
+      
+      reproducirCancion(cancionActual || 0);
+    } else {
+      audioRef.current.play();
     }
+    setIsPlaying(true);
+  };
 
-    useEffect(() => {
-        listaCancion()
-    }, []) // Se ejecuta una sola vez
+  const handlePause = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
 
-    return (
+  const handleNext = () => {
+    if (!lista.length) return;
+    const nextIndex = (cancionActual + 1) % lista.length;
+    reproducirCancion(nextIndex);
+  };
 
-        <div className="ListaCancion">
-            <div className="list-group">
-                {lista.map((cancion, id) => (
-                    <button key={id} type="button" onClick={() => reproducir(cancion.url)} value={cancion} className="list-group-item list-group-item-action" aria-current="true">
-                        {cancion.name}
-                    </button>
+  const handlePrev = () => {
+    if (!lista.length) return;
+    const prevIndex = (cancionActual - 1 + lista.length) % lista.length;
+    reproducirCancion(prevIndex);
+  };
 
-                ))}
-            </div>
-            <div className="ElpotifayButtons">
-                <button id="play">
-                    <audio controls ref={activeSong}>
-                        <source src={activeSong} type="audio/mp3" />
-                    </audio>
-                </button>
-            </div>
+  return (
+    <div className="ListaCancion">
+      <div className="list-group">
+        {lista.map((cancion, id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => reproducirCancion(id)}
+            className="list-group-item list-group-item-action"
+          >
+            🎵 {cancion.name}
+          </button>
+        ))}
+      </div>
 
-        </div>
+      <audio ref={audioRef} className="d-none" />
 
-
-    )
-
-}
-
-/*
-
-const PlayerBody = () => { 
-
-    const [songs] = useState([
-        {
-            id: 1,
-            name: "Mario Castle",
-            url: "/sound/files/mario/songs/castle.mp3",
-            category: "category"
-        },
-        {
-            id: 2,
-            name: "Mario Star",
-            url: "/sound/files/mario/songs/hurry-starman.mp3",
-            category: "category"
-        },
-        {
-            id: 3,
-            name: "Mario Overworld",
-            url: "/sound/files/mario/songs/overworld.mp3",
-            category: "category"
-        },
-        {
-            id: 4,
-            name: "Mario Stage 1",
-            url: "/sound/files/mario/songs/stage1.mp3",
-            category: "category"
-        },
-        {
-            id: 5,
-            name: "Mario Stage 2",
-            url: "/sound/files/mario/songs/stage2.mp3",
-            category: "category"
-        }
-    ])
-
-    return (
-
-        <div className="ListaCancion">
-
-            
-        </div>
-
-    )
+      <PlayerButtons
+        onPlay={handlePlay}
+        onPause={handlePause}
+        onNext={handleNext}
+        onPrev={handlePrev}
+      />
+    </div>
+  );
 };
-
-*/
-
-
-
-
 
 export default PlayerBody;
